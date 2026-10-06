@@ -1,7 +1,7 @@
 """Generate ten states for the elven Hunter Focus Arc artwork."""
 
 from pathlib import Path
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 import math
 
 
@@ -12,6 +12,10 @@ W, H, S = 140, 100, 6
 CX, CY = 70, 75
 START, END = 190, 350
 GROUPS = ((190, 242), (245, 295), (298, 350))
+try:
+    NUMBER_FONT = ImageFont.truetype("C:/Windows/Fonts/georgiab.ttf", 16*S)
+except OSError:
+    NUMBER_FONT = ImageFont.truetype("DejaVuSerif-Bold.ttf", 16*S)
 
 
 def point(radius, angle):
@@ -76,10 +80,6 @@ for focus in range(10):
     # Relief leaves and two gold dividing marks separate each set of three.
     for angle in (213, 225, 260, 280, 315, 327):
         leaf(draw, angle, 64, 8.5, 4, (184, 174, 120, 255))
-    draw.polygon([(70*S, 5*S), (74*S, 11*S), (70*S, 16*S), (66*S, 11*S)],
-                 fill=(174, 163, 111, 255))
-    draw.polygon([(70*S, 7*S), (72*S, 11*S), (70*S, 14*S), (68*S, 11*S)],
-                 fill=(78, 159, 119, 255))
     for angle in (243.5, 296.5):
         inner = point(48, angle)
         outer = point(64, angle)
@@ -105,6 +105,19 @@ for focus in range(10):
                     (114, 241, 153, 255) if active else (24, 57, 46, 255))
             if active:
                 ellipse(draw, x-0.7, y-0.8, 1.35, (239, 255, 219, 255))
+
+    # The current value sits on the red arc in a small elven shield.
+    outer = ((61, 6), (79, 6), (84, 12), (81, 24),
+             (70, 28), (59, 24), (56, 12))
+    inner = ((62, 8), (78, 8), (82, 13), (79, 23),
+             (70, 26), (61, 23), (58, 13))
+    draw.polygon([(x*S, y*S) for x, y in outer], fill=(193, 178, 124, 255))
+    draw.polygon([(x*S, y*S) for x, y in inner], fill=(21, 39, 35, 255))
+    draw.line(((62*S, 9*S), (78*S, 9*S)),
+              fill=(227, 215, 158, 255), width=S)
+    draw.text((70*S, 17*S), str(focus), font=NUMBER_FONT, anchor="mm",
+              fill=(252, 239, 190, 255), stroke_width=S,
+              stroke_fill=(42, 24, 20, 255))
 
     canvas = canvas.resize((W, H), Image.Resampling.LANCZOS)
     canvas.save(OUT / f"focus_{focus}.tga")
