@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<Plugin>
+    <Information>
+        <Name>Hunter Focus Arc</Name>
+        <Author>Oleg</Author>
+        <Version>1.4.0</Version>
+        <Description>Movable curved Focus display for the Hunter.</Description>
+    </Information>
+    <Package>HunterFocusArc.Main</Package>
+    <Configuration Apartment="Hunter Focus Arc" />
+</Plugin>
+
+
+
+
+
