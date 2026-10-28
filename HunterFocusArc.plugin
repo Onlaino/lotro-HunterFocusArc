@@ -3,7 +3,7 @@
     <Information>
         <Name>Hunter Focus Arc</Name>
         <Author>Oleg</Author>
-        <Version>1.5.0</Version>
+        <Version>1.6.0</Version>
         <Description>Movable curved Focus display for the Hunter.</Description>
     </Information>
     <Package>HunterFocusArc.Main</Package>
