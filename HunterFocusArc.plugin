@@ -3,8 +3,8 @@
     <Information>
         <Name>Hunter Focus Arc</Name>
         <Author>Oleg</Author>
-        <Version>1.7.0</Version>
-        <Description>Movable Hunter Focus display with two selectable themes.</Description>
+        <Version>1.8.0</Version>
+        <Description>Movable Hunter Focus display with five forms and four styles.</Description>
     </Information>
     <Package>HunterFocusArc.Main</Package>
     <Configuration Apartment="Hunter Focus Arc" />

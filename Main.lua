@@ -9,10 +9,29 @@ local BASE_WIDTH = 140
 local BASE_HEIGHT = 100
 local MIN_SIZE = 80
 local MAX_SIZE = 200
-local THEMES = {
-    moon = { name = "Moon Hunter", images = "HunterFocusArc/Images" },
-    bow = { name = "Lunar Bow", images = "HunterFocusArc/Images/Bow" }
+local FORMS = {
+    arc = "Arc", bow = "Bow", quiver = "Ranger Quiver",
+    sigil = "Three Paths Sigil", fan = "Arrow Fan"
 }
+local FORM_ORDER = { "arc", "bow", "quiver", "sigil", "fan" }
+local STYLES = {
+    moon = "Moon Silver", sun = "Sun Bronze",
+    forest = "Lorien Gold", shadow = "Shadow Obsidian"
+}
+local STYLE_ORDER = { "moon", "sun", "forest", "shadow" }
+
+local function imageDirectory(form, style)
+    if form == "arc" and style == "moon" then
+        return "HunterFocusArc/Images"
+    elseif form == "bow" and style == "moon" then
+        return "HunterFocusArc/Images/Bow"
+    end
+    return "HunterFocusArc/Images/Variants/" .. form .. "/" .. style
+end
+
+local function imagePath(form, style, focus)
+    return imageDirectory(form, style) .. "/focus_" .. focus .. ".tga"
+end
 
 local function say(message)
     Turbine.Shell.WriteLine("[" .. PLUGIN_NAME .. "] " .. message)
@@ -54,7 +73,10 @@ local settings = {
     y = tonumber(saved.y),
     size = tonumber(saved.size) or 115,
     visible = saved.visible ~= false,
-    theme = THEMES[saved.theme] and saved.theme or "moon"
+    -- Migrate 1.7.x's single theme setting without changing its appearance.
+    form = FORMS[saved.form] and saved.form or
+        (saved.theme == "bow" and "bow" or "arc"),
+    style = STYLES[saved.style] and saved.style or "moon"
 }
 
 if settings.size < MIN_SIZE or settings.size > MAX_SIZE then
@@ -113,68 +135,113 @@ local function updateFocus(force)
     lastFocus = focus
     local targetWidth, targetHeight = image:GetSize()
     image:SetSize(BASE_WIDTH, BASE_HEIGHT)
-    image:SetBackground(THEMES[settings.theme].images .. "/focus_" .. focus .. ".tga")
+    image:SetBackground(imagePath(settings.form, settings.style, focus))
     image:SetStretchMode(1)
     image:SetSize(targetWidth, targetHeight)
 end
 
-local optionsStatus = nil
-local function setTheme(theme)
-    if not THEMES[theme] then
-        say("Themes: moon (Moon Hunter), bow (Lunar Bow).")
-        return
+local formStatus = nil
+local styleStatus = nil
+local preview = nil
+local formButtons = {}
+local styleButtons = {}
+local function refreshOptions()
+    if not formStatus then return end
+    formStatus:SetText("Form: " .. FORMS[settings.form])
+    styleStatus:SetText("Style: " .. STYLES[settings.style])
+    preview:SetBackground(imagePath(settings.form, settings.style, 6))
+    for _, form in ipairs(FORM_ORDER) do
+        formButtons[form]:SetText((settings.form == form and "> " or "  ") .. FORMS[form])
     end
-    if settings.theme ~= theme then
-        settings.theme = theme
+    for _, style in ipairs(STYLE_ORDER) do
+        styleButtons[style]:SetText((settings.style == style and "> " or "  ") .. STYLES[style])
+    end
+end
+
+local function setAppearance(form, style)
+    if not FORMS[form] or not STYLES[style] then return end
+    if settings.form ~= form or settings.style ~= style then
+        settings.form = form
+        settings.style = style
         updateFocus(true)
         save()
     end
-    if optionsStatus then
-        optionsStatus:SetText("Active: " .. THEMES[settings.theme].name)
+    refreshOptions()
+    say("Form: " .. FORMS[settings.form] .. "; style: " .. STYLES[settings.style])
+end
+
+local function nextValue(order, current)
+    for index, value in ipairs(order) do
+        if value == current then
+            return order[index % #order + 1]
+        end
     end
-    say("Theme: " .. THEMES[settings.theme].name)
+    return order[1]
 end
 
 -- The Plugin Manager calls GetOptionsPanel for its Options tab.
 local optionsPanel = Turbine.UI.Control()
-optionsPanel:SetSize(310, 280)
+optionsPanel:SetSize(310, 370)
 
 local optionsTitle = Turbine.UI.Label()
 optionsTitle:SetParent(optionsPanel)
 optionsTitle:SetPosition(12, 8)
 optionsTitle:SetSize(280, 24)
-optionsTitle:SetText("Hunter Focus Arc - themes")
+optionsTitle:SetText("Hunter Focus Arc - appearance")
 optionsTitle:SetFont(Turbine.UI.Lotro.Font.TrajanPro13)
 optionsTitle:SetForeColor(Turbine.UI.Color(0.88, 0.89, 0.75))
 
-optionsStatus = Turbine.UI.Label()
-optionsStatus:SetParent(optionsPanel)
-optionsStatus:SetPosition(12, 33)
-optionsStatus:SetSize(280, 21)
-optionsStatus:SetText("Active: " .. THEMES[settings.theme].name)
-optionsStatus:SetForeColor(Turbine.UI.Color(0.72, 0.92, 0.87))
+formStatus = Turbine.UI.Label()
+formStatus:SetParent(optionsPanel)
+formStatus:SetPosition(12, 34)
+formStatus:SetSize(280, 20)
+formStatus:SetForeColor(Turbine.UI.Color(0.72, 0.92, 0.87))
 
-local function addThemeChoice(theme, top)
-    local button = Turbine.UI.Lotro.Button()
-    button:SetParent(optionsPanel)
-    button:SetPosition(12, top + 36)
-    button:SetSize(130, 26)
-    button:SetText(THEMES[theme].name)
-    button.Click = function()
-        setTheme(theme)
-    end
+styleStatus = Turbine.UI.Label()
+styleStatus:SetParent(optionsPanel)
+styleStatus:SetPosition(12, 56)
+styleStatus:SetSize(280, 20)
+styleStatus:SetForeColor(Turbine.UI.Color(0.72, 0.92, 0.87))
 
-    local preview = Turbine.UI.Control()
-    preview:SetParent(optionsPanel)
-    preview:SetPosition(155, top)
-    preview:SetSize(BASE_WIDTH, BASE_HEIGHT)
-    preview:SetMouseVisible(false)
-    preview:SetBackground(THEMES[theme].images .. "/focus_6.tga")
-    preview:SetStretchMode(1)
+preview = Turbine.UI.Control()
+preview:SetParent(optionsPanel)
+preview:SetPosition(85, 79)
+preview:SetSize(BASE_WIDTH, BASE_HEIGHT)
+preview:SetMouseVisible(false)
+preview:SetStretchMode(1)
+
+local function addHeading(caption, top)
+    local label = Turbine.UI.Label()
+    label:SetParent(optionsPanel)
+    label:SetPosition(12, top)
+    label:SetSize(280, 20)
+    label:SetText(caption)
+    label:SetForeColor(Turbine.UI.Color(0.88, 0.89, 0.75))
 end
 
-addThemeChoice("moon", 56)
-addThemeChoice("bow", 165)
+local function addChoice(value, index, top, target, callback)
+    local button = Turbine.UI.Lotro.Button()
+    button:SetParent(optionsPanel)
+    button:SetPosition(12 + ((index - 1) % 2) * 145,
+        top + math.floor((index - 1) / 2) * 29)
+    button:SetSize(140, 26)
+    button.Click = function()
+        callback(value)
+    end
+    target[value] = button
+end
+
+addHeading("Form", 180)
+for index, form in ipairs(FORM_ORDER) do
+    addChoice(form, index, 202, formButtons,
+        function(value) setAppearance(value, settings.style) end)
+end
+addHeading("Style", 291)
+for index, style in ipairs(STYLE_ORDER) do
+    addChoice(style, index, 313, styleButtons,
+        function(value) setAppearance(settings.form, value) end)
+end
+refreshOptions()
 
 plugin.GetOptionsPanel = function()
     return optionsPanel
@@ -247,16 +314,37 @@ function command:Execute(_, arguments)
         clampPosition()
         save()
         say("Size: " .. settings.size .. "%")
-    elseif action == "theme" then
+    elseif action == "form" then
         if value == "next" then
-            setTheme(settings.theme == "moon" and "bow" or "moon")
-        elseif value == "" then
-            say("Current theme: " .. THEMES[settings.theme].name .. ". Use /hfocus theme moon|bow|next")
+            setAppearance(nextValue(FORM_ORDER, settings.form), settings.style)
+        elseif FORMS[value] then
+            setAppearance(value, settings.style)
         else
-            setTheme(value)
+            say("Forms: arc, bow, quiver, sigil, fan. Current: " .. settings.form)
         end
-    elseif action == "themes" then
-        say("Themes: moon (Moon Hunter), bow (Lunar Bow).")
+    elseif action == "style" then
+        if value == "next" then
+            setAppearance(settings.form, nextValue(STYLE_ORDER, settings.style))
+        elseif STYLES[value] then
+            setAppearance(settings.form, value)
+        else
+            say("Styles: moon, sun, forest, shadow. Current: " .. settings.style)
+        end
+    elseif action == "theme" then
+        -- Old commands remain useful for existing users and macros.
+        if value == "moon" then
+            setAppearance("arc", "moon")
+        elseif value == "bow" then
+            setAppearance("bow", "moon")
+        elseif value == "next" then
+            setAppearance(settings.form == "arc" and "bow" or "arc", "moon")
+        else
+            say("Use /hfocus form and /hfocus style. Legacy: theme moon|bow|next")
+        end
+    elseif action == "forms" then
+        say("Forms: arc, bow, quiver, sigil, fan.")
+    elseif action == "styles" or action == "themes" then
+        say("Styles: moon, sun, forest, shadow.")
     elseif action == "show" or action == "hide" then
         settings.visible = action == "show"
         window:SetVisible(settings.visible)
@@ -275,12 +363,12 @@ function command:Execute(_, arguments)
         save()
         say("Position and size reset.")
     else
-        say("Commands: /hfocus theme moon|bow|next, size 80-200, show, hide, reset")
+        say("Commands: /hfocus form arc|bow|quiver|sigil|fan; style moon|sun|forest|shadow; size 80-200, show, hide, reset")
     end
 end
 
 Turbine.Shell.AddCommand("hfocus", command)
-say("Loaded with " .. THEMES[settings.theme].name .. ". Move in UI layout mode; type /hfocus for commands.")
+say("Loaded: " .. FORMS[settings.form] .. " / " .. STYLES[settings.style] .. ". Move in UI layout mode; type /hfocus for commands.")
 
 plugin.Unload = function()
     save()
