@@ -18,7 +18,7 @@ PALETTES = {
     "forest": {"metal": "#d8c98a", "bright": "#a9e791", "low": "#416347", "dark": "#243b2c", "number": "#fff4cf"},
     "shadow": {"metal": "#b1a9c4", "bright": "#d0aaff", "low": "#55446b", "dark": "#292439", "number": "#fff0e3"},
 }
-FORMS = ("arc", "bow", "quiver", "sigil", "fan")
+FORMS = ("arc", "bow", "quiver", "sigil", "fan", "line")
 try:
     FONT = ImageFont.truetype("C:/Windows/Fonts/georgiab.ttf", 16*S)
 except OSError:
@@ -181,6 +181,26 @@ def render_fan(d, focus, p, style):
     badge(d,cx,cy,focus,p,10)
 
 
+def render_line(d, focus, p, style):
+    # A low-profile rail with nine round Focus cells in three clear groups.
+    xs=(17,28,39,55,66,77,93,104,115)
+    y=62
+    d.rounded_rectangle(tuple(round(v*S) for v in (11,56,121,68)),
+                        radius=5*S, fill=rgba(p["dark"]),
+                        outline=rgba(p["metal"]), width=S)
+    line(d,((14,y),(118,y)),p["low"],2.3)
+    if focus:
+        line(d,((14,y),(xs[focus-1],y)),p["bright"],2.8)
+    for x in (47,85):
+        line(d,((x,53),(x,71)),p["metal"],1.5)
+    for index,x in enumerate(xs):
+        active=index<focus
+        dot(d,x,y,4.2,p["bright"] if active else p["low"],p["metal"],1.2)
+        if active:
+            dot(d,x-1,y-1,1.1,p["number"])
+    badge(d,66,36,focus,p,10)
+
+
 def render(form, style, focus):
     p=PALETTES[style]
     image=Image.new("RGBA",(W*S,H*S),(0,0,0,0))
@@ -191,6 +211,8 @@ def render(form, style, focus):
         render_quiver(d,focus,p,style)
     elif form=="sigil":
         render_sigil(d,focus,p,style)
+    elif form=="line":
+        render_line(d,focus,p,style)
     else:
         render_fan(d,focus,p,style)
     return image.resize((W,H),Image.Resampling.LANCZOS)
@@ -206,7 +228,7 @@ def main():
         for focus in range(10):
             render(form,style,focus).save(directory/f"focus_{focus}.tga")
     # A contact sheet helps review the actual game-sized textures.
-    sheet=Image.new("RGB",(5*220,4*160),(22,27,29))
+    sheet=Image.new("RGB",(len(FORMS)*220,4*160),(22,27,29))
     draw=ImageDraw.Draw(sheet)
     for row,style in enumerate(PALETTES):
         for col,form in enumerate(FORMS):

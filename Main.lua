@@ -11,9 +11,9 @@ local MIN_SIZE = 80
 local MAX_SIZE = 200
 local FORMS = {
     arc = "Arc", bow = "Bow", quiver = "Ranger Quiver",
-    sigil = "Three Paths Sigil", fan = "Arrow Fan"
+    sigil = "Three Paths Sigil", fan = "Arrow Fan", line = "Focus Line"
 }
-local FORM_ORDER = { "arc", "bow", "quiver", "sigil", "fan" }
+local FORM_ORDER = { "arc", "bow", "quiver", "sigil", "fan", "line" }
 local STYLES = {
     moon = "Moon Silver", sun = "Sun Bronze",
     forest = "Lorien Gold", shadow = "Shadow Obsidian"
@@ -320,7 +320,7 @@ function command:Execute(_, arguments)
         elseif FORMS[value] then
             setAppearance(value, settings.style)
         else
-            say("Forms: arc, bow, quiver, sigil, fan. Current: " .. settings.form)
+            say("Forms: arc, bow, quiver, sigil, fan, line. Current: " .. settings.form)
         end
     elseif action == "style" then
         if value == "next" then
@@ -342,7 +342,7 @@ function command:Execute(_, arguments)
             say("Use /hfocus form and /hfocus style. Legacy: theme moon|bow|next")
         end
     elseif action == "forms" then
-        say("Forms: arc, bow, quiver, sigil, fan.")
+        say("Forms: arc, bow, quiver, sigil, fan, line.")
     elseif action == "styles" or action == "themes" then
         say("Styles: moon, sun, forest, shadow.")
     elseif action == "show" or action == "hide" then
@@ -363,7 +363,7 @@ function command:Execute(_, arguments)
         save()
         say("Position and size reset.")
     else
-        say("Commands: /hfocus form arc|bow|quiver|sigil|fan; style moon|sun|forest|shadow; size 80-200, show, hide, reset")
+        say("Commands: /hfocus form arc|bow|quiver|sigil|fan|line; style moon|sun|forest|shadow; size 80-200, show, hide, reset")
     end
 end
 
