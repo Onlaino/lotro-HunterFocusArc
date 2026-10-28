@@ -18,7 +18,7 @@ PALETTES = {
     "forest": {"metal": "#d8c98a", "bright": "#a9e791", "low": "#416347", "dark": "#243b2c", "number": "#fff4cf"},
     "shadow": {"metal": "#b1a9c4", "bright": "#d0aaff", "low": "#55446b", "dark": "#292439", "number": "#fff0e3"},
 }
-FORMS = ("arc", "bow", "quiver", "sigil", "fan", "line")
+FORMS = ("arc", "bow", "quiver", "sigil", "fan", "line", "branch")
 try:
     FONT = ImageFont.truetype("C:/Windows/Fonts/georgiab.ttf", 16*S)
 except OSError:
@@ -201,6 +201,38 @@ def render_line(d, focus, p, style):
     badge(d,66,36,focus,p,10)
 
 
+def render_branch(d, focus, p, style):
+    # A low, gently curved Elven branch; three carved knots separate leaves.
+    coords=((17,65),(28,62),(39,64),(55,66),(66,63),
+            (77,65),(93,62),(104,64),(115,61))
+    stem=((9,68),(28,62),(49,65),(67,63),(85,66),(105,63),(129,59))
+    line(d,stem,p["dark"],6)
+    line(d,stem,p["metal"],2)
+    if focus:
+        active_stem=((9,68),) + tuple((x,y) for x,y in stem[1:]
+                                if x < coords[focus-1][0]) + (coords[focus-1],)
+        line(d,active_stem,p["bright"],1.8)
+    for x,y in ((47,64),(85,66)):
+        dot(d,x,y,2.6,p["dark"],p["metal"],1)
+        line(d,((x,y-6),(x,y+6)),p["metal"],1)
+    for index,(x,y) in enumerate(coords):
+        side=-1 if index%2==0 else 1
+        tip=(x+side*2,y-12)
+        base=(x,y)
+        line(d,(base,tip),p["metal"],1)
+        leaf=((tip[0],tip[1]-4),(tip[0]+5,tip[1]-1),
+              (tip[0]+1,tip[1]+5),(tip[0]-4,tip[1]+1))
+        active=index<focus
+        polygon(d,leaf,p["bright"] if active else p["low"],p["metal"])
+        if active:
+            line(d,((tip[0],tip[1]-3),(tip[0]+.5,tip[1]+3)),p["number"],.6)
+    # The central knot carries the number without raising the branch high.
+    badge(d,69,36,focus,p,10)
+    for sign in (-1,1):
+        polygon(d,((69+sign*11,35),(69+sign*17,31),(69+sign*15,37)),
+                p["metal"],p["bright"])
+
+
 def render(form, style, focus):
     p=PALETTES[style]
     image=Image.new("RGBA",(W*S,H*S),(0,0,0,0))
@@ -213,6 +245,8 @@ def render(form, style, focus):
         render_sigil(d,focus,p,style)
     elif form=="line":
         render_line(d,focus,p,style)
+    elif form=="branch":
+        render_branch(d,focus,p,style)
     else:
         render_fan(d,focus,p,style)
     return image.resize((W,H),Image.Resampling.LANCZOS)

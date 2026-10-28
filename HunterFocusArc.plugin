@@ -3,8 +3,8 @@
     <Information>
         <Name>Hunter Focus Arc</Name>
         <Author>Oleg</Author>
-        <Version>1.9.0</Version>
-        <Description>Movable Hunter Focus display with six forms and four styles.</Description>
+        <Version>1.10.0</Version>
+        <Description>Hunter Focus display with seven forms, four styles, size and rotation controls.</Description>
     </Information>
     <Package>HunterFocusArc.Main</Package>
     <Configuration Apartment="Hunter Focus Arc" />
