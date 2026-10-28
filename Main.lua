@@ -190,19 +190,11 @@ end
 local formStatus = nil
 local styleStatus = nil
 local preview = nil
-local formButtons = {}
-local styleButtons = {}
 local function refreshOptions()
     if not formStatus then return end
-    formStatus:SetText("Form: " .. FORMS[settings.form])
-    styleStatus:SetText("Style: " .. STYLES[settings.style])
+    formStatus:SetText(FORMS[settings.form])
+    styleStatus:SetText(STYLES[settings.style])
     preview:SetBackground(imagePath(settings.form, settings.style, 6))
-    for _, form in ipairs(FORM_ORDER) do
-        formButtons[form]:SetText((settings.form == form and "> " or "  ") .. FORMS[form])
-    end
-    for _, style in ipairs(STYLE_ORDER) do
-        styleButtons[style]:SetText((settings.style == style and "> " or "  ") .. STYLES[style])
-    end
 end
 
 local function setAppearance(form, style)
@@ -221,6 +213,15 @@ local function nextValue(order, current)
     for index, value in ipairs(order) do
         if value == current then
             return order[index % #order + 1]
+        end
+    end
+    return order[1]
+end
+
+local function previousValue(order, current)
+    for index, value in ipairs(order) do
+        if value == current then
+            return order[(index - 2 + #order) % #order + 1]
         end
     end
     return order[1]
@@ -260,56 +261,52 @@ end
 appearanceTab.Click = function() showOptionPage("appearance") end
 transformTab.Click = function() showOptionPage("transform") end
 
-formStatus = onPage(Turbine.UI.Label(), appearanceControls)
-formStatus:SetParent(optionsPanel)
-formStatus:SetPosition(12, 39)
-formStatus:SetSize(185, 20)
-formStatus:SetForeColor(Turbine.UI.Color(0.72, 0.92, 0.87))
+local function appearanceLabel(caption, left, top, width, height, color)
+    local label = onPage(Turbine.UI.Label(), appearanceControls)
+    label:SetParent(optionsPanel)
+    label:SetPosition(left, top)
+    label:SetSize(width, height)
+    if caption then label:SetText(caption) end
+    label:SetForeColor(color)
+    return label
+end
 
-styleStatus = onPage(Turbine.UI.Label(), appearanceControls)
-styleStatus:SetParent(optionsPanel)
-styleStatus:SetPosition(12, 60)
-styleStatus:SetSize(185, 20)
-styleStatus:SetForeColor(Turbine.UI.Color(0.72, 0.92, 0.87))
-
+local headingColor = Turbine.UI.Color(0.88, 0.78, 0.57)
+local valueColor = Turbine.UI.Color(0.94, 0.98, 0.92)
+appearanceLabel("PREVIEW  6 / 9", 12, 38, 285, 18, headingColor)
 preview = onPage(Turbine.UI.Control(), appearanceControls)
 preview:SetParent(optionsPanel)
-preview:SetPosition(205, 38)
-preview:SetSize(96, 69)
+preview:SetPosition(85, 56)
+preview:SetSize(140, 100)
 preview:SetMouseVisible(false)
 preview:SetStretchMode(1)
 
-local function addHeading(caption, top)
-    local label = onPage(Turbine.UI.Label(), appearanceControls)
-    label:SetParent(optionsPanel)
-    label:SetPosition(12, top)
-    label:SetSize(280, 20)
-    label:SetText(caption)
-    label:SetForeColor(Turbine.UI.Color(0.88, 0.89, 0.75))
-end
+appearanceLabel("FORM  (7 choices)", 12, 162, 285, 18, headingColor)
+formStatus = appearanceLabel(nil, 76, 188, 160, 22, valueColor)
+appearanceLabel("STYLE  (4 choices)", 12, 218, 285, 18, headingColor)
+styleStatus = appearanceLabel(nil, 76, 244, 160, 22, valueColor)
 
-local function addChoice(value, index, top, target, callback)
+local function appearanceButton(caption, left, top, callback)
     local button = onPage(Turbine.UI.Lotro.Button(), appearanceControls)
     button:SetParent(optionsPanel)
-    button:SetPosition(12 + ((index - 1) % 2) * 145,
-        top + math.floor((index - 1) / 2) * 25)
-    button:SetSize(140, 24)
-    button.Click = function()
-        callback(value)
-    end
-    target[value] = button
+    button:SetPosition(left, top)
+    button:SetSize(58, 30)
+    button:SetText(caption)
+    button.Click = callback
 end
 
-addHeading("Form", 82)
-for index, form in ipairs(FORM_ORDER) do
-    addChoice(form, index, 101, formButtons,
-        function(value) setAppearance(value, settings.style) end)
-end
-addHeading("Style", 203)
-for index, style in ipairs(STYLE_ORDER) do
-    addChoice(style, index, 222, styleButtons,
-        function(value) setAppearance(settings.form, value) end)
-end
+appearanceButton("Prev", 12, 182, function()
+    setAppearance(previousValue(FORM_ORDER, settings.form), settings.style)
+end)
+appearanceButton("Next", 240, 182, function()
+    setAppearance(nextValue(FORM_ORDER, settings.form), settings.style)
+end)
+appearanceButton("Prev", 12, 238, function()
+    setAppearance(settings.form, previousValue(STYLE_ORDER, settings.style))
+end)
+appearanceButton("Next", 240, 238, function()
+    setAppearance(settings.form, nextValue(STYLE_ORDER, settings.style))
+end)
 
 local function transformLabel(top, width)
     local label = onPage(Turbine.UI.Label(), transformControls)
