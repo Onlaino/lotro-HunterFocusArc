@@ -3,7 +3,7 @@
     <Information>
         <Name>Hunter Focus Arc</Name>
         <Author>Oleg</Author>
-        <Version>1.10.0</Version>
+        <Version>1.11.0</Version>
         <Description>Hunter Focus display with seven forms, four styles, size and rotation controls.</Description>
     </Information>
     <Package>HunterFocusArc.Main</Package>

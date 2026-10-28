@@ -22,9 +22,7 @@ local STYLES = {
 local STYLE_ORDER = { "moon", "sun", "forest", "shadow" }
 
 local function imageDirectory(form, style)
-    if form == "arc" and style == "moon" then
-        return "HunterFocusArc/Images"
-    elseif form == "bow" and style == "moon" then
+    if form == "bow" and style == "moon" then
         return "HunterFocusArc/Images/Bow"
     end
     return "HunterFocusArc/Images/Variants/" .. form .. "/" .. style

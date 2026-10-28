@@ -22,13 +22,18 @@ def package(source: Path, output: Path, tag: str) -> Path:
     image_root = source / "Images"
     if not image_root.is_dir():
         raise SystemExit("Missing Images directory")
-    image_files = sorted(image_root.rglob("*.tga"))
-    if not image_files:
-        raise SystemExit("No TGA images found")
-    for directory in {path.parent for path in image_files}:
-        missing = [n for n in range(10) if not (directory / f"focus_{n}.tga").is_file()]
-        if missing:
-            raise SystemExit(f"Incomplete focus frames in {directory}: {missing}")
+    forms = ("arc", "bow", "quiver", "sigil", "fan", "line", "branch")
+    styles = ("moon", "sun", "forest", "shadow")
+    image_files = []
+    for form in forms:
+        for style in styles:
+            directory = (image_root / "Bow" if (form, style) == ("bow", "moon")
+                         else image_root / "Variants" / form / style)
+            for focus in range(10):
+                path = directory / f"focus_{focus}.tga"
+                if not path.is_file():
+                    raise SystemExit(f"Missing focus frame: {path}")
+                image_files.append(path)
 
     output.mkdir(parents=True, exist_ok=True)
     archive = output / f"HunterFocusArc-{tag}.zip"

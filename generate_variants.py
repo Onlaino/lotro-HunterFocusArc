@@ -1,7 +1,6 @@
-"""Generate pre-rendered 140x100 LOTRO Focus textures for form/style pairs.
+"""Generate ten pre-rendered 140x100 Focus textures for every form/style pair.
 
-The original Moon Arc and Moon Bow artwork is kept unchanged. All other
-combinations have ten Focus frames and a transparent RGBA TGA image.
+The original Moon Bow remains available through its legacy image path.
 """
 
 from pathlib import Path
@@ -90,6 +89,35 @@ def flourish(d, x, y, palette, style):
 
 
 def render_arc(d, focus, p, style, bow=False):
+    if not bow:
+        # One continuous crescent. The light and the nine markers advance
+        # together; small radial cuts separate the three groups.
+        cx, cy, radius = 70, 84, 61
+        start, end = 190, 350
+        arc(d, cx, cy, radius, start, end, p["dark"], 11)
+        arc(d, cx, cy, radius, start, end, p["metal"], 2)
+        arc(d, cx, cy, radius-4, start, end, p["low"], 6)
+        if focus:
+            arc(d, cx, cy, radius-4, start,
+                start+(end-start)*focus/9, p["bright"], 6)
+        for index in range(9):
+            angle = math.radians(start+(index+.5)*(end-start)/9)
+            x = cx+(radius-17)*math.cos(angle)
+            y = cy+(radius-17)*math.sin(angle)
+            active = index < focus
+            dot(d, x, y, 4.1, p["bright"] if active else p["dark"],
+                p["number"] if active else p["metal"], 1.2)
+            if active:
+                dot(d, x-0.8, y-0.8, 0.9, p["number"])
+        for index in (3, 6):
+            angle = math.radians(start+index*(end-start)/9)
+            line(d, ((cx+(radius-10)*math.cos(angle),
+                      cy+(radius-10)*math.sin(angle)),
+                     (cx+(radius+1)*math.cos(angle),
+                      cy+(radius+1)*math.sin(angle))), p["metal"], 1.5)
+        badge(d, cx, 73, focus, p, 11)
+        return
+
     cx,cy = 70, 82
     radius = 58 if bow else 60
     groups = ((199,241),(249,291),(299,341)) if bow else ((190,240),(245,295),(300,350))
@@ -182,55 +210,50 @@ def render_fan(d, focus, p, style):
 
 
 def render_line(d, focus, p, style):
-    # A low-profile rail with nine round Focus cells in three clear groups.
-    xs=(17,28,39,55,66,77,93,104,115)
-    y=62
-    d.rounded_rectangle(tuple(round(v*S) for v in (11,56,121,68)),
-                        radius=5*S, fill=rgba(p["dark"]),
-                        outline=rgba(p["metal"]), width=S)
-    line(d,((14,y),(118,y)),p["low"],2.3)
+    # A compact capsule with larger markers and no protruding arrowheads.
+    xs=(22,33,44,59,70,81,96,107,118)
+    y=66
+    d.rounded_rectangle(tuple(round(v*S) for v in (9,50,131,82)),
+                        radius=16*S, fill=rgba(p["dark"]),
+                        outline=rgba(p["metal"]), width=round(1.5*S))
+    line(d,((22,y),(118,y)),p["low"],5)
     if focus:
-        line(d,((14,y),(xs[focus-1],y)),p["bright"],2.8)
-    for x in (47,85):
-        line(d,((x,53),(x,71)),p["metal"],1.5)
+        line(d,((22,y),(xs[focus-1],y)),p["bright"],5)
+    for x in (51.5,88.5):
+        line(d,((x,55),(x,77)),p["metal"],1.6)
     for index,x in enumerate(xs):
         active=index<focus
-        dot(d,x,y,4.2,p["bright"] if active else p["low"],p["metal"],1.2)
+        dot(d,x,y,4.8,p["bright"] if active else p["dark"],
+            p["number"] if active else p["metal"],1.3)
         if active:
-            dot(d,x-1,y-1,1.1,p["number"])
-    badge(d,66,36,focus,p,10)
+            dot(d,x-1,y-1,1,p["number"])
+    badge(d,70,46,focus,p,10)
 
 
 def render_branch(d, focus, p, style):
-    # A low, gently curved Elven branch; three carved knots separate leaves.
-    coords=((17,65),(28,62),(39,64),(55,66),(66,63),
-            (77,65),(93,62),(104,64),(115,61))
-    stem=((9,68),(28,62),(49,65),(67,63),(85,66),(105,63),(129,59))
-    line(d,stem,p["dark"],6)
-    line(d,stem,p["metal"],2)
+    # A smooth stem and nine readable leaves; gold knots mark each third.
+    xs=(17,30,43,56,70,84,97,110,123)
+    def stem_y(x):
+        return 71-5*math.sin(math.pi*(x-7)/126)
+    stem=tuple((x,stem_y(x)) for x in range(7,134,3))
+    line(d,stem,p["dark"],7)
+    line(d,stem,p["metal"],2.4)
     if focus:
-        active_stem=((9,68),) + tuple((x,y) for x,y in stem[1:]
-                                if x < coords[focus-1][0]) + (coords[focus-1],)
-        line(d,active_stem,p["bright"],1.8)
-    for x,y in ((47,64),(85,66)):
-        dot(d,x,y,2.6,p["dark"],p["metal"],1)
-        line(d,((x,y-6),(x,y+6)),p["metal"],1)
-    for index,(x,y) in enumerate(coords):
-        side=-1 if index%2==0 else 1
-        tip=(x+side*2,y-12)
-        base=(x,y)
-        line(d,(base,tip),p["metal"],1)
-        leaf=((tip[0],tip[1]-4),(tip[0]+5,tip[1]-1),
-              (tip[0]+1,tip[1]+5),(tip[0]-4,tip[1]+1))
+        active_stem=tuple((x,stem_y(x)) for x in range(7,xs[focus-1]+1,3))
+        line(d,active_stem+((xs[focus-1],stem_y(xs[focus-1])),),
+             p["bright"],2.4)
+    for x in (49.5,90.5):
+        dot(d,x,stem_y(x)+5,2.6,p["number"],p["metal"],1)
+    for index,x in enumerate(xs):
+        y=stem_y(x)
+        line(d,((x,y),(x,y-11)),p["metal"],1.3)
+        leaf=((x,y-26),(x+5.5,y-19),(x+5,y-14),
+              (x,y-9),(x-5,y-14),(x-5.5,y-19))
         active=index<focus
         polygon(d,leaf,p["bright"] if active else p["low"],p["metal"])
         if active:
-            line(d,((tip[0],tip[1]-3),(tip[0]+.5,tip[1]+3)),p["number"],.6)
-    # The central knot carries the number without raising the branch high.
-    badge(d,69,36,focus,p,10)
-    for sign in (-1,1):
-        polygon(d,((69+sign*11,35),(69+sign*17,31),(69+sign*15,37)),
-                p["metal"],p["bright"])
+            line(d,((x,y-23),(x,y-12)),p["number"],.7)
+    badge(d,70,81,focus,p,10)
 
 
 def render(form, style, focus):
@@ -253,9 +276,8 @@ def render(form, style, focus):
 
 
 def main():
-    # Keep the approved Moon Arc and Moon Bow art exactly as it is.
     combos=[(f,s) for f in FORMS for s in PALETTES
-            if (f,s) not in (("arc","moon"),("bow","moon"))]
+            if (f,s) != ("bow","moon")]
     for form,style in combos:
         directory=OUT/form/style
         directory.mkdir(parents=True,exist_ok=True)
@@ -266,8 +288,8 @@ def main():
     draw=ImageDraw.Draw(sheet)
     for row,style in enumerate(PALETTES):
         for col,form in enumerate(FORMS):
-            original=(ROOT/"Images"/("Bow" if form=="bow" else "")/"focus_6.tga")
-            art=Image.open(original).convert("RGBA") if style=="moon" and form in ("arc","bow") and original.exists() else render(form,style,6)
+            original=ROOT/"Images"/"Bow"/"focus_6.tga"
+            art=Image.open(original).convert("RGBA") if style=="moon" and form=="bow" and original.exists() else render(form,style,6)
             sheet.paste(art,(col*220+40,row*160+34),art)
             draw.text((col*220+12,row*160+8),f"{form} / {style}",fill=(235,224,200))
     sheet.save(ROOT/"variants-contact-sheet.png")
