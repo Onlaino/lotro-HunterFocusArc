@@ -1,6 +1,7 @@
 import "Turbine"
 import "Turbine.Gameplay"
 import "Turbine.UI"
+import "Turbine.UI.Lotro"
 
 local PLUGIN_NAME = "Hunter Focus Arc"
 local DATA_NAME = "HunterFocusArcSettings"
@@ -8,6 +9,10 @@ local BASE_WIDTH = 140
 local BASE_HEIGHT = 100
 local MIN_SIZE = 80
 local MAX_SIZE = 200
+local THEMES = {
+    moon = { name = "Moon Hunter", images = "HunterFocusArc/Images" },
+    bow = { name = "Lunar Bow", images = "HunterFocusArc/Images/Bow" }
+}
 
 local function say(message)
     Turbine.Shell.WriteLine("[" .. PLUGIN_NAME .. "] " .. message)
@@ -48,7 +53,8 @@ local settings = {
     x = tonumber(saved.x),
     y = tonumber(saved.y),
     size = tonumber(saved.size) or 115,
-    visible = saved.visible ~= false
+    visible = saved.visible ~= false,
+    theme = THEMES[saved.theme] and saved.theme or "moon"
 }
 
 if settings.size < MIN_SIZE or settings.size > MAX_SIZE then
@@ -100,16 +106,78 @@ local function applyEditMode()
 end
 
 local lastFocus = -1
-local function updateFocus()
+local function updateFocus(force)
     local focus = tonumber(classAttributes:GetFocus()) or 0
     focus = math.max(0, math.min(9, math.floor(focus + 0.5)))
-    if focus == lastFocus then return end
+    if focus == lastFocus and not force then return end
     lastFocus = focus
     local targetWidth, targetHeight = image:GetSize()
     image:SetSize(BASE_WIDTH, BASE_HEIGHT)
-    image:SetBackground("HunterFocusArc/Images/focus_" .. focus .. ".tga")
+    image:SetBackground(THEMES[settings.theme].images .. "/focus_" .. focus .. ".tga")
     image:SetStretchMode(1)
     image:SetSize(targetWidth, targetHeight)
+end
+
+local optionsStatus = nil
+local function setTheme(theme)
+    if not THEMES[theme] then
+        say("Themes: moon (Moon Hunter), bow (Lunar Bow).")
+        return
+    end
+    if settings.theme ~= theme then
+        settings.theme = theme
+        updateFocus(true)
+        save()
+    end
+    if optionsStatus then
+        optionsStatus:SetText("Active: " .. THEMES[settings.theme].name)
+    end
+    say("Theme: " .. THEMES[settings.theme].name)
+end
+
+-- The Plugin Manager calls GetOptionsPanel for its Options tab.
+local optionsPanel = Turbine.UI.Control()
+optionsPanel:SetSize(310, 280)
+
+local optionsTitle = Turbine.UI.Label()
+optionsTitle:SetParent(optionsPanel)
+optionsTitle:SetPosition(12, 8)
+optionsTitle:SetSize(280, 24)
+optionsTitle:SetText("Hunter Focus Arc - themes")
+optionsTitle:SetFont(Turbine.UI.Lotro.Font.TrajanPro13)
+optionsTitle:SetForeColor(Turbine.UI.Color(0.88, 0.89, 0.75))
+
+optionsStatus = Turbine.UI.Label()
+optionsStatus:SetParent(optionsPanel)
+optionsStatus:SetPosition(12, 33)
+optionsStatus:SetSize(280, 21)
+optionsStatus:SetText("Active: " .. THEMES[settings.theme].name)
+optionsStatus:SetForeColor(Turbine.UI.Color(0.72, 0.92, 0.87))
+
+local function addThemeChoice(theme, top)
+    local button = Turbine.UI.Lotro.Button()
+    button:SetParent(optionsPanel)
+    button:SetPosition(12, top + 36)
+    button:SetSize(130, 26)
+    button:SetText(THEMES[theme].name)
+    button.Click = function()
+        setTheme(theme)
+    end
+
+    local preview = Turbine.UI.Control()
+    preview:SetParent(optionsPanel)
+    preview:SetPosition(155, top)
+    preview:SetSize(BASE_WIDTH, BASE_HEIGHT)
+    preview:SetMouseVisible(false)
+    preview:SetBackground(THEMES[theme].images .. "/focus_6.tga")
+    preview:SetStretchMode(1)
+end
+
+addThemeChoice("moon", 56)
+addThemeChoice("bow", 165)
+
+plugin.GetOptionsPanel = function()
+    return optionsPanel
 end
 
 window.MouseDown = function(sender, args)
@@ -179,6 +247,16 @@ function command:Execute(_, arguments)
         clampPosition()
         save()
         say("Size: " .. settings.size .. "%")
+    elseif action == "theme" then
+        if value == "next" then
+            setTheme(settings.theme == "moon" and "bow" or "moon")
+        elseif value == "" then
+            say("Current theme: " .. THEMES[settings.theme].name .. ". Use /hfocus theme moon|bow|next")
+        else
+            setTheme(value)
+        end
+    elseif action == "themes" then
+        say("Themes: moon (Moon Hunter), bow (Lunar Bow).")
     elseif action == "show" or action == "hide" then
         settings.visible = action == "show"
         window:SetVisible(settings.visible)
@@ -197,12 +275,12 @@ function command:Execute(_, arguments)
         save()
         say("Position and size reset.")
     else
-        say("Move in LOTRO UI layout mode. Commands: /hfocus size 80-200, show, hide, reset")
+        say("Commands: /hfocus theme moon|bow|next, size 80-200, show, hide, reset")
     end
 end
 
 Turbine.Shell.AddCommand("hfocus", command)
-say("Loaded. Move the arc in LOTRO UI layout mode; type /hfocus for commands.")
+say("Loaded with " .. THEMES[settings.theme].name .. ". Move in UI layout mode; type /hfocus for commands.")
 
 plugin.Unload = function()
     save()
