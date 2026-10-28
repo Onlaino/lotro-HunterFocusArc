@@ -181,7 +181,7 @@ end
 
 -- The Plugin Manager calls GetOptionsPanel for its Options tab.
 local optionsPanel = Turbine.UI.Control()
-optionsPanel:SetSize(310, 370)
+optionsPanel:SetSize(310, 280)
 
 local optionsTitle = Turbine.UI.Label()
 optionsTitle:SetParent(optionsPanel)
@@ -194,19 +194,19 @@ optionsTitle:SetForeColor(Turbine.UI.Color(0.88, 0.89, 0.75))
 formStatus = Turbine.UI.Label()
 formStatus:SetParent(optionsPanel)
 formStatus:SetPosition(12, 34)
-formStatus:SetSize(280, 20)
+formStatus:SetSize(185, 20)
 formStatus:SetForeColor(Turbine.UI.Color(0.72, 0.92, 0.87))
 
 styleStatus = Turbine.UI.Label()
 styleStatus:SetParent(optionsPanel)
 styleStatus:SetPosition(12, 56)
-styleStatus:SetSize(280, 20)
+styleStatus:SetSize(185, 20)
 styleStatus:SetForeColor(Turbine.UI.Color(0.72, 0.92, 0.87))
 
 preview = Turbine.UI.Control()
 preview:SetParent(optionsPanel)
-preview:SetPosition(85, 79)
-preview:SetSize(BASE_WIDTH, BASE_HEIGHT)
+preview:SetPosition(205, 34)
+preview:SetSize(96, 69)
 preview:SetMouseVisible(false)
 preview:SetStretchMode(1)
 
@@ -223,7 +223,7 @@ local function addChoice(value, index, top, target, callback)
     local button = Turbine.UI.Lotro.Button()
     button:SetParent(optionsPanel)
     button:SetPosition(12 + ((index - 1) % 2) * 145,
-        top + math.floor((index - 1) / 2) * 29)
+        top + math.floor((index - 1) / 2) * 27)
     button:SetSize(140, 26)
     button.Click = function()
         callback(value)
@@ -231,14 +231,14 @@ local function addChoice(value, index, top, target, callback)
     target[value] = button
 end
 
-addHeading("Form", 180)
+addHeading("Form", 100)
 for index, form in ipairs(FORM_ORDER) do
-    addChoice(form, index, 202, formButtons,
+    addChoice(form, index, 120, formButtons,
         function(value) setAppearance(value, settings.style) end)
 end
-addHeading("Style", 291)
+addHeading("Style", 202)
 for index, style in ipairs(STYLE_ORDER) do
-    addChoice(style, index, 313, styleButtons,
+    addChoice(style, index, 223, styleButtons,
         function(value) setAppearance(settings.form, value) end)
 end
 refreshOptions()
